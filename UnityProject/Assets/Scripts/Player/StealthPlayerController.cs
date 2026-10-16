@@ -21,7 +21,6 @@ namespace AdaptiveStealth
         [SerializeField] private Transform cameraReference;
         [SerializeField] private KeyCode crouchKey = KeyCode.LeftControl;
         [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
-
         private CharacterController controller;
         private float verticalVelocity;
         private bool forcedCrawl;
@@ -46,30 +45,25 @@ namespace AdaptiveStealth
             float targetHeight = crouchHeld ? crouchingHeight : standingHeight;
             controller.height = Mathf.MoveTowards(controller.height, targetHeight, heightLerpSpeed * dt);
             controller.center = new Vector3(controller.center.x, controller.height * 0.5f, controller.center.z);
-
-            Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
-            input = Vector2.ClampMagnitude(input, 1f);
+            Vector2 input = Vector2.ClampMagnitude(new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical")), 1f);
             Transform basis = cameraReference != null ? cameraReference : transform;
             Vector3 forward = Vector3.ProjectOnPlane(basis.forward, Vector3.up).normalized;
             Vector3 right = Vector3.ProjectOnPlane(basis.right, Vector3.up).normalized;
             Vector3 move = forward * input.y + right * input.x;
             if (move.sqrMagnitude > 1f) move.Normalize();
-
             float speed = forcedCrawl ? crawlSpeed : crouchHeld ? crouchSpeed : runHeld ? runSpeed : walkSpeed;
             if (move.sqrMagnitude > 0.001f)
             {
                 Quaternion targetRotation = Quaternion.LookRotation(move, Vector3.up);
                 transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, turnSharpness * dt);
             }
-
             if (controller.isGrounded && verticalVelocity < 0f) verticalVelocity = -2f;
             verticalVelocity += gravity * dt;
             Vector3 velocity = move * speed;
             velocity.y = verticalVelocity;
             controller.Move(velocity * dt);
-
             if (forcedCrawl) MoveState = PlayerMoveState.Crawling;
-            else if (crouchHeld) MoveState = input.sqrMagnitude > 0.001f ? PlayerMoveState.Crouching : PlayerMoveState.Idle;
+            else if (crouchHeld) MoveState = PlayerMoveState.Crouching;
             else if (move.sqrMagnitude < 0.001f) MoveState = PlayerMoveState.Idle;
             else MoveState = runHeld ? PlayerMoveState.Running : PlayerMoveState.Walking;
         }
